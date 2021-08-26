@@ -5,59 +5,14 @@
   </head>
   <body>
     <script>
-      // var config = {
-      //     type: Phaser.AUTO,
-      //     width: 800,
-      //     height: 600,
-      //     physics: {
-      //         default: 'arcade',
-      //         arcade: {
-      //             gravity: { y: 200 }
-      //         }
-      //     },
-      //     scene: {
-      //         preload: preload,
-      //         create: create
-      //     }
-      // };
-
-      // var game = new Phaser.Game(config);
-
-      // function preload ()
-      // {
-      //     this.load.setBaseURL('http://labs.phaser.io');
-
-      //     this.load.image('sky', 'assets/skies/space3.png');
-      //     this.load.image('logo', 'assets/sprites/phaser3-logo.png');
-      //     this.load.image('red', 'assets/particles/red.png');
-      // }
-
-      // function create ()
-      // {
-      //     this.add.image(400, 300, 'sky');
-
-      //     var particles = this.add.particles('red');
-
-      //     var emitter = particles.createEmitter({
-      //         speed: 100,
-      //         scale: { start: 1, end: 0 },
-      //         blendMode: 'ADD'
-      //     });
-
-      //     var logo = this.physics.add.image(400, 100, 'logo');
-
-      //     logo.setVelocity(100, 200);
-      //     logo.setBounce(1, 1);
-      //     logo.setCollideWorldBounds(true);
-
-      //     emitter.startFollow(logo);
-      // }
-
       var config = {
         type: Phaser.AUTO,
         parent: "content",
         width: 640,
         height: 512,
+        physics: {
+            default: 'arcade'
+        },
         scene: {
           key: "main",
           preload: preload,
@@ -93,12 +48,20 @@
           Phaser.GameObjects.Image.call(this, scene, 0, 0, "sprites", "enemy");
           this.follower = { t: 0, vec: new Phaser.Math.Vector2() };
         },
+        receiveDamage: function(damage) {
+            this.hp -= damage;
+
+            // if hp drops below 0 we deactivate this enemy
+            if(this.hp <= 0) {
+                this.setActive(false);
+                this.setVisible(false);
+            }
+        },
         startOnPath: function () {
           this.follower.t = 0;
-
           path.getPoint(this.follower.t, this.follower.vec);
-
           this.setPosition(this.follower.vec.x, this.follower.vec.y);
+          this.hp = 100;
         },
         update: function (time, delta) {
           // move the t point along the path, 0 is the start and 0 is the end
@@ -131,7 +94,51 @@
         },
         update: function (time, delta) {
           if (time > this.nextTic) {
+            this.fire();
             this.nextTic = time + 1000;
+          }
+        },
+        fire: function() {
+            var enemy = getEnemy(this.x, this.y, 100);
+            if(enemy) {
+                var angle = Phaser.Math.Angle.Between(this.x, this.y, enemy.x, enemy.y);
+                addBullet(this.x, this.y, angle);
+                this.angle = (angle + Math.PI/2) * Phaser.Math.RAD_TO_DEG;
+            }
+        }
+      });
+
+      var Bullet = new Phaser.Class({
+        Extends: Phaser.GameObjects.Image,
+
+        initialzie: function Bulltet(scene) {
+          Phaser.GameObjects.Image.call(this, scene, 0, 0, "bullet");
+
+          this.dx = 0;
+          this.dy = 0;
+          this.lifespan = 0;
+
+          this.speed = Phaser.Math.GetSpeed(600, 1);
+        },
+        fire: function (x, y, angle) {
+          this.setActive(true);
+          this.setVisible(true);
+
+          this.setPosition(x, y);
+
+          this.dx = Math.cos(angle);
+          this.dy = Math.sin(angle);
+          this.lifespan = 300;
+        },
+
+        update: function (time, delta) {
+          this.lifespan -= delta;
+          this.x += this.dx * (this.speed * delta);
+          this.y += this.dy * (this.speed * delta);
+
+          if (this.lifespan <= 0) {
+            this.setActive(false);
+            this.setVisible(false);
           }
         },
       });
@@ -168,6 +175,30 @@
         return map[i][j] === 0;
       }
 
+      function addBullet(x, y, angle) {
+        var bullet = bullets.get();
+        if (bullet) {
+          bullet.fire(x, y, angle);
+        }
+      }
+
+      function getEnemy(x, y, distance) {
+        var enemyUnits = enemies.getChildren();
+        for (let i = 0; i < enemyUnits.length; i++) {
+          if (
+            enemyUnits[i].active &&
+            Phaser.Math.Distance.Between(
+              x,
+              y,
+              enemyUnits[i].x,
+              enemyUnits[i].y
+            ) <= distance
+          )
+            return enemyUnits[i];
+        }
+        return false;
+      }
+
       function create() {
         // this graphics element is only for visualization,
         // its not related to our path
@@ -177,16 +208,18 @@
         // parameters are the start x and y of our path
         path = this.add.path(96, -32);
         path.lineTo(96, 164);
-        path.lineTo(480, 164);
+        path.lineTo(480, 190);
+        path.lineTo(500, 164);
         path.lineTo(480, 544);
 
         graphics.lineStyle(3, 0xffffff, 1);
         // visualize the path
         path.draw(graphics);
-        enemies = this.add.group({ classType: Enemy, runChildUpdate: true });
+        enemies = this.physics.add.group({ classType: Enemy, runChildUpdate: true });
         this.nextEnemy = 0;
         turrets = this.add.group({ classType: Turret, runChildUpdate: true });
         this.input.on("pointerdown", placeTurret);
+        bullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true });
       }
 
       function update(time, delta) {
