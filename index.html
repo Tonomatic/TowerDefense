@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <title>Tower Defense</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.15.1/dist/phaser-arcade-physics.min.js"></script>
   </head>
   <body>
@@ -11,7 +14,7 @@
         width: 640,
         height: 512,
         physics: {
-            default: 'arcade'
+          default: "arcade",
         },
         scene: {
           key: "main",
@@ -25,10 +28,11 @@
       var path;
 
       function preload() {
-        this.load.atlas("sprites", "images/circle.png");
-        this.load.image("bullet", "images/blue-circle.png");
+        this.load.atlas("sprites", "spritesheet.png", "spritemovement.json");
+        this.load.image("bullet", "bullet.png");
       }
       var ENEMY_SPEED = 1 / 10000;
+      var BULLET_DAMAGE = 50;
 
       var map = [
         [0, -1, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -45,23 +49,23 @@
         Extends: Phaser.GameObjects.Image,
 
         initialize: function Enemy(scene) {
-          Phaser.GameObjects.Image.call(this, scene, 0, 0, "sprites", "enemy");
-          this.follower = { t: 0, vec: new Phaser.Math.Vector2() };
-        },
-        receiveDamage: function(damage) {
-            this.hp -= damage;
-
-            // if hp drops below 0 we deactivate this enemy
-            if(this.hp <= 0) {
-                this.setActive(false);
-                this.setVisible(false);
-            }
+            Phaser.GameObjects.Image.call(this, scene, 0, 0, "sprites", "enemy");
+            this.follower = { t: 0, vec: new Phaser.Math.Vector2() };
         },
         startOnPath: function () {
-          this.follower.t = 0;
-          path.getPoint(this.follower.t, this.follower.vec);
-          this.setPosition(this.follower.vec.x, this.follower.vec.y);
-          this.hp = 100;
+            this.follower.t = 0;
+            path.getPoint(this.follower.t, this.follower.vec);
+            this.setPosition(this.follower.vec.x, this.follower.vec.y);
+            this.hp = 100;
+        },
+        receiveDamage: function (damage) {
+          this.hp -= damage;
+
+          // if hp drops below 0 we deactivate this enemy
+          if (this.hp <= 0) {
+            this.setActive(false);
+            this.setVisible(false);
+          }
         },
         update: function (time, delta) {
           // move the t point along the path, 0 is the start and 0 is the end
@@ -98,51 +102,51 @@
             this.nextTic = time + 1000;
           }
         },
-        fire: function() {
-            var enemy = getEnemy(this.x, this.y, 100);
-            if(enemy) {
-                var angle = Phaser.Math.Angle.Between(this.x, this.y, enemy.x, enemy.y);
-                addBullet(this.x, this.y, angle);
-                this.angle = (angle + Math.PI/2) * Phaser.Math.RAD_TO_DEG;
-            }
-        }
+        fire: function () {
+          var enemy = getEnemy(this.x, this.y, 100);
+          if (enemy) {
+            var angle = Phaser.Math.Angle.Between(
+              this.x,
+              this.y,
+              enemy.x,
+              enemy.y
+            );
+            addBullet(this.x, this.y, angle);
+            this.angle = (angle + Math.PI / 2) * Phaser.Math.RAD_TO_DEG;
+          }
+        },
       });
 
       var Bullet = new Phaser.Class({
         Extends: Phaser.GameObjects.Image,
-
-        initialzie: function Bulltet(scene) {
+        initialize: function Bullet(scene) {
           Phaser.GameObjects.Image.call(this, scene, 0, 0, "bullet");
-
           this.dx = 0;
           this.dy = 0;
           this.lifespan = 0;
-
           this.speed = Phaser.Math.GetSpeed(600, 1);
         },
         fire: function (x, y, angle) {
           this.setActive(true);
           this.setVisible(true);
-
+          //  Bullets fire from the middle of the screen to the given x/y
           this.setPosition(x, y);
-
+          //  we don't need to rotate the bullets as they are round
+          //  this.setRotation(angle);
           this.dx = Math.cos(angle);
           this.dy = Math.sin(angle);
           this.lifespan = 300;
         },
-
         update: function (time, delta) {
           this.lifespan -= delta;
           this.x += this.dx * (this.speed * delta);
           this.y += this.dy * (this.speed * delta);
-
           if (this.lifespan <= 0) {
             this.setActive(false);
             this.setVisible(false);
           }
         },
       });
-
       //making a drawgrid function
       function drawGrid(graphics) {
         graphics.lineStyle(1, 0x0000ff, 0.8);
@@ -182,6 +186,18 @@
         }
       }
 
+      function damageEnemy(enemy, bullet) {
+        // only if both enemy and bullet are alive
+        if (enemy.active === true && bullet.active === true) {
+          // we remove the bullet right away
+          bullet.setActive(false);
+          bullet.setVisible(false);
+
+          // decrease the enemy hp with BULLET_DAMAGE
+          enemy.receiveDamage(BULLET_DAMAGE);
+        }
+      }
+
       function getEnemy(x, y, distance) {
         var enemyUnits = enemies.getChildren();
         for (let i = 0; i < enemyUnits.length; i++) {
@@ -208,18 +224,24 @@
         // parameters are the start x and y of our path
         path = this.add.path(96, -32);
         path.lineTo(96, 164);
-        path.lineTo(480, 190);
-        path.lineTo(500, 164);
+        path.lineTo(480, 164);
         path.lineTo(480, 544);
 
         graphics.lineStyle(3, 0xffffff, 1);
         // visualize the path
         path.draw(graphics);
-        enemies = this.physics.add.group({ classType: Enemy, runChildUpdate: true });
+        enemies = this.physics.add.group({
+          classType: Enemy,
+          runChildUpdate: true,
+        });
         this.nextEnemy = 0;
         turrets = this.add.group({ classType: Turret, runChildUpdate: true });
         this.input.on("pointerdown", placeTurret);
-        bullets = this.physics.add.group({ classType: Bullet, runChildUpdate: true });
+        bullets = this.physics.add.group({
+          classType: Bullet,
+          runChildUpdate: true,
+        });
+        this.physics.add.overlap(enemies, bullets, damageEnemy);
       }
 
       function update(time, delta) {
