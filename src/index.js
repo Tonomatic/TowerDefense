@@ -1,8 +1,3 @@
-
-
-
-
-
 var config = {
     type: Phaser.AUTO,
     parent: "content",

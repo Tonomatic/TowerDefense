@@ -6,12 +6,24 @@
       name="viewport"
       content="width=device-width,initial-scale=1,user-scalable=no"
     />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        display: flex;
+        justify-content: center;
+      }
+    </style>
     <title>Tower Defense</title>
     <link rel="stylesheet" href="index.css" />
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.15.1/dist/phaser-arcade-physics.min.js"></script>
   </head>
   <body>
-    <script defer>
+    <script>
       var config = {
         type: Phaser.AUTO,
         parent: "content",
@@ -220,7 +232,6 @@
         }
         return false;
       }
-
       function create() {
         // this graphics element is only for visualization,
         // its not related to our path
