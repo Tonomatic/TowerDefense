@@ -11,19 +11,28 @@
       body {
         margin: 0;
         padding: 0;
+        height: 100%;
       }
-
       body {
         display: flex;
         justify-content: center;
+        align-items: center;
+        border: 1px solid green;
+      }
+      canvas {
+        border-radius: 20px;
+        border: 3px solid blue;
       }
     </style>
     <title>Tower Defense</title>
-    <link rel="stylesheet" href="index.css" />
+    <link rel="stylesheet" href="./index.css"/>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.15.1/dist/phaser-arcade-physics.min.js"></script>
   </head>
   <body>
-    <script>
+    <a href="/menu">
+      Menu
+    </a>
+    <script >
       var config = {
         type: Phaser.AUTO,
         parent: "content",
@@ -79,6 +88,7 @@
           this.hp -= damage;
           // if hp drops below 0 we deactivate this enemy
           if (this.hp <= 0) {
+            count--;
             this.setActive(false);
             this.setVisible(false);
             COUNT++;
@@ -141,7 +151,7 @@
           this.dx = 0;
           this.dy = 0;
           this.lifespan = 0;
-          this.speed = Phaser.Math.GetSpeed(600, 1);
+          this.speed = Phaser.Math.GetSpeed(800, 1);
         },
         fire: function (x, y, angle) {
           this.setActive(true);
@@ -217,7 +227,6 @@
 
       function getEnemy(x, y, distance) {
         var enemyUnits = enemies.getChildren();
-        console.log(enemies);
         for (let i = 0; i < enemyUnits.length; i++) {
           if (
             enemyUnits[i].active &&
@@ -263,15 +272,17 @@
         });
         this.physics.add.overlap(enemies, bullets, damageEnemy);
       }
-
+      let count = 0;
       function update(time, delta) {
         // if its time for the next enemy
         var enemyLength = enemies.getChildren().length;
-        if (enemyLength === 10) {
-          return;
+        if (count === 10) {
+          return
         }
 
         if (time > this.nextEnemy) {
+          count++;
+          console.log(count)
           var enemy = enemies.get();
           if (enemy) {
             enemy.setActive(true);

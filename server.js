@@ -1,28 +1,20 @@
-// const express = require('express');
-// const path = require('path');
 
-// const app = express();
-// const port = process.env.PORT || 8080;
-
-// // sendFile will go here
-// app.get('/', function(req, res) {
-//   res.sendFile(path.join(__dirname, '/index.html'));
-// });
-
-// app.listen(port);
-// console.log('Server started at http://localhost:' + port);
-
-const express = require("express")
+const express = require('express')
 const app = express()
+es6Renderer = require('express-es6-template-engine'),
 
-// use the express-static middleware
+//this sets up multiple pages
+app.engine('html', es6Renderer);
+app.set('views', 'views');
+app.set('view engine', 'html');
+
+//this is our game file. Does not work with views engine.
 app.use(express.static("public"))
 
-// define the first route
-app.get("/", function (req, res) {
-  res.send("<h1>Hello World!</h1>")
+
+app.get("/menu", function (req, res) {
+  res.render('menu')
 })
 
-// start the server listening for requests
 app.listen(process.env.PORT || 3000,
 	() => console.log("Server is running..."));
