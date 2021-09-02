@@ -47,19 +47,19 @@
         this.load.atlas("sprites", "spritesheet.png", "spritemovement.json");
         this.load.image("bullet", "bullet.png");
       }
-      var ENEMY_SPEED = 1 / 10000;
+      var ENEMY_SPEED = 1 / 15000;
       var BULLET_DAMAGE = 50;
       var COUNT = 0;
 
       var map = [
         [0, -1, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, -1, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, -1, -1, -1, -1, -1, -1, -1, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, -1, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, -1, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, -1, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, -1, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, -1, 0, 0],
+        [0, -1, -1, -1, -1, -1, -1, -1, -1, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, -1, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, -1, 0],
+        [0, -1, -1, -1, -1, -1, -1, -1, -1, 0],
+        [0, -1, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, -1, -1, -1, -1, -1, -1, -1, -1, -1],
       ];
 
       var Enemy = new Phaser.Class({
@@ -241,8 +241,11 @@
         // parameters are the start x and y of our path
         path = this.add.path(150, -32);
         path.lineTo(150, 250);
-        path.lineTo(750, 250);
-        path.lineTo(750, 800);
+        path.lineTo(850, 250);
+        path.lineTo(850, 550);
+        path.lineTo(150, 550);
+        path.lineTo(150, 750);
+        path.lineTo(1000, 750);
 
         graphics.lineStyle(3, 0xffffff, 1);
         // visualize the path
@@ -264,7 +267,7 @@
       function update(time, delta) {
         // if its time for the next enemy
         var enemyLength = enemies.getChildren().length;
-        if (enemyLength === 5) {
+        if (enemyLength === 10) {
           return;
         }
 
