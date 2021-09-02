@@ -59,6 +59,8 @@
       var ENEMY_SPEED = 1 / 15000;
       var BULLET_DAMAGE = 50;
       var COUNT = 0;
+      var DESTROYED = 0;
+      var ENEMYCOUNT = 15;
 
       var map = [
         [0, -1, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -75,8 +77,12 @@
         Extends: Phaser.GameObjects.Image,
 
         initialize: function Enemy(scene) {
-          Phaser.GameObjects.Image.call(this, scene, 0, 0, "sprites", "enemy");
-          this.follower = { t: 0, vec: new Phaser.Math.Vector2() };
+          if(ENEMYCOUNT > 0 || DESTROYED >= 10) {
+            Phaser.GameObjects.Image.call(this, scene, 0, 0, "sprites", "enemy");
+            this.follower = { t: 0, vec: new Phaser.Math.Vector2() };
+          } else {
+            Phaser.GameObjects.Image.call(this, scene, 0, 0, "sprites", "enemy");
+          }
         },
         startOnPath: function () {
           this.follower.t = 0;
@@ -88,7 +94,7 @@
           this.hp -= damage;
           // if hp drops below 0 we deactivate this enemy
           if (this.hp <= 0) {
-            count--;
+            DESTROYED++;
             this.setActive(false);
             this.setVisible(false);
             COUNT++;
@@ -130,7 +136,7 @@
           }
         },
         fire: function () {
-          var enemy = getEnemy(this.x, this.y, 150);
+          var enemy = getEnemy(this.x, this.y, 175);
           if (enemy) {
             var angle = Phaser.Math.Angle.Between(
               this.x,
@@ -151,7 +157,7 @@
           this.dx = 0;
           this.dy = 0;
           this.lifespan = 0;
-          this.speed = Phaser.Math.GetSpeed(800, 1);
+          this.speed = Phaser.Math.GetSpeed(1000, 1);
         },
         fire: function (x, y, angle) {
           this.setActive(true);
@@ -276,13 +282,19 @@
       function update(time, delta) {
         // if its time for the next enemy
         var enemyLength = enemies.getChildren().length;
-        if (count === 10) {
-          return
-        }
+        // if (count === 10) {
+        //   return
+        // }
 
         if (time > this.nextEnemy) {
+          if(ENEMYCOUNT === 0 && DESTROYED >= 10) {
+            alert("YOU WIN!")
+          } else if(ENEMYCOUNT === 0) {
+            alert("YOU LOOSE!")
+            enemy = false
+          }
           count++;
-          console.log(count)
+          ENEMYCOUNT--;
           var enemy = enemies.get();
           if (enemy) {
             enemy.setActive(true);
